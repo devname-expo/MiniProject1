@@ -7,13 +7,11 @@ from frobenius import FrobeniusCalc
 
 
 class App:
+
     def __init__(self):
-        # Initialize parser
-        self.parser = None
-        # Parse args
-        self.args = None
-        # Format input given in args
-        self.input = None
+        self.parser = self._init_argparse()
+        self.args = self.parser.args
+        self.input = self._set_input()
 
     def _init_argparse(self) -> argparse.ArgumentParser:
         """Initializes argparse object
@@ -21,79 +19,121 @@ class App:
         Returns:
             argparse.ArgumentParser: a parser
         """
+        parser = argparse.ArgumentParser(
+            description="Determine the largest integer that cannot be reached using non-negative combinations of given integers.",
+        )
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            "-u",
+            "--units",
+            help="string of comma separated integers for combination",
+            type=str,
+        )
+        group.add_argument(
+            "-f",
+            "--file",
+            help="file containing comma separated integers for combination (Multiline will run multiple iterations with each line as input.)",
+            type=str,
+        )
 
-        # Create ArgumentParser instance
+        return parser
 
-        # Create Arguments
-        #   data arg: string or csv
-        #   parameter arg: upper bound on total units
-        #   (?) parameter arg: upper bounds on individual units
-
-        # Return parser
-        return None
-
-    # Validate input is comma separated list of positive integers
     def _validate_input(self, s: str):
+        """Validates string is comma separated list of positive integers
 
+        Args:
+            s (str): string to validate
+
+        Raises:
+            ValueError: throws error if string is not only digits and commas
+        """
         # Declare regex pattern for list of positive ints
-        # Check input against regex
-        # Call throw exception on failure
+        pattern = re.compile(r"(\d+,?)+$")
+        if not pattern.match(s):
+            raise ValueError(
+                "Input must be a string of positive integers separated by commas. Ex: '1,2,3'"
+            )
 
-        pass
-
-    # Transform string of ints to list
     def _string_to_list(self, s: str) -> list:
+        """Transforms string of integers to list
 
-        # Call Validate input function
-        # Split string by comma
+        Args:
+            s (str): string to transform into list
 
-        # Return list of ints
-        return None
+        Returns:
+            list: list of integers
+        """
+        self._validate_input(s)
+        l = s.split(",")
 
-    # Validate list contains only digits for csvs
+        return l
+
     def _validate_list(self, l: list):
+        """Validates list contains only digits
 
-        # Declare regex pattern
-        # join list to string
-        # Throw ValueError if not match
+        Args:
+            l (list): list to validate
 
-        pass
+        Raises:
+            ValueError: throws error if list is not only positive digits
+        """
+        # Declare regex pattern for list of positive ints
+        pattern = re.compile(r"(\d+,?)+$")
+        if not pattern.match(",".join(l)):
+            raise ValueError("Csv must contain only positive integers.")
 
-    # Read file to list of lists
     def _read_csv(self, csv_file: Path) -> list:
+        """Reads csv file to list of lists of integers
 
-        # Read csv
-        # For each line
-        ## Validate list
-        ## Transform to list of ints
+        Args:
+            csv_file (Path): Path object to a csv file
 
-        # Return list of lists of ints
-        return None
+        Returns:
+            list: a list of positive integers
+        """
+        with open(csv_file, mode="r") as file:
+            csvFile = csv.reader(file)
+            list_f = []
+            for line in csvFile:
+                self._validate_list(line)
+                list_f.append([int(_) for _ in line])
 
-    # Set units to list of positive integers scraped from input
+        return list_f
+
     def _set_input(self) -> list:
-        # If string given
-        ## Call Transform function
-        ## Append list to input variable
+        """Sets units to list of positive integers scraped from input.
 
-        # Else if file
-        ## Create Path obj
-        ## Check for .csv
-        ## Call Read function
-        pass
+        Returns:
+            list: a list of lists of positive integers
 
-    # Run Frobenius calc on all input
+        Raises:
+            ValueError: raises error if file is given without .csv suffix
+        """
+        input = []
+        if self.args.units:
+            units_l = self._string_to_list(self.args.units)
+            input.append(units_l)
+
+        # Handle csv input
+        else:
+            path = Path(self.args.file)
+            if path.suffix == "csv":
+                input = self._read_csv(path)
+            else:
+                raise ValueError("File must be csv format.")
+
+        return input
+
     def run_frobenius_calculator(self):
+        """Runs Frobenius Calculator on each given input"""
+        calc = FrobeniusCalc()
 
-        # Initialize FrobeniusCalc
-        # For each input
-        ## Get result
-        ## Print output
-        pass
+        for units in self.input:
+            result = FrobeniusCalc.solve_for_frobenius_number(units)
+            print(f"The Frobenius number of {units} is {result}.")
 
 
 if __name__ == "__main__":
 
-    # Initialize App
-    # Run Frobenius calculator
-    pass
+    app = App()
+    app.run_frobenius_calculator()
