@@ -1,8 +1,6 @@
 import unittest
-import sys
 from unittest.mock import Mock, patch, mock_open
 from pathlib import Path
-from io import StringIO
 
 import app
 
@@ -131,9 +129,9 @@ class TestApp(unittest.TestCase):
 
         # Arrange
         test_cases = [
-            ("1,2,3", ["1", "2", "3"]),
-            ("42", ["42"]),
-            ("1,23,456", ["1", "23", "456"]),
+            ("1,2,3", [1, 2, 3]),
+            ("42", [42]),
+            ("1,23,456", [1, 23, 456]),
         ]
 
         for input_str, expected in test_cases:

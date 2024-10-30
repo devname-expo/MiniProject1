@@ -37,7 +37,7 @@ def string_to_list(s: str) -> list:
     validate_input(s)
     l = s.split(",")
 
-    return l
+    return [int(n) for n in l]
 
 
 def validate_list(l: list):
@@ -50,9 +50,11 @@ def validate_list(l: list):
         ValueError: throws error if list is not only positive digits
     """
     # Declare regex pattern for list of positive ints
-    pattern = re.compile(r"(\d+,?)+$")
+    pattern = re.compile(r"\d+(,\d+)*$")
     if not pattern.match(",".join(l)):
-        raise ValueError("Csv must contain only positive integers.")
+        raise ValueError(
+            "Csv must contain only positive integers. Tip: Make sure your csv doesn't have trailing commas."
+        )
 
 
 # Read file to list of lists
@@ -141,5 +143,5 @@ def run_frobenius_calculator(input: list):
 if __name__ == "__main__":
 
     parser = init_argparse()
-    input = format_input(parser.args)
+    input = format_input(parser.parse_args())
     run_frobenius_calculator(input)
