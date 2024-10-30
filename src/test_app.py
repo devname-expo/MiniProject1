@@ -4,12 +4,11 @@ from unittest.mock import Mock, patch, mock_open
 from pathlib import Path
 from io import StringIO
 
-sys.path.append("./src")
-from app import App
+import app
 
 
 class TestApp(unittest.TestCase):
-    """Test suite for App class"""
+    """Test suite for app file"""
 
     @patch("argparse.ArgumentParser")
     def test_init_argparse(self, mock_ArgumentParser):
@@ -22,7 +21,7 @@ class TestApp(unittest.TestCase):
         mock_ArgumentParser.return_value = mock_parser
 
         # Apply
-        App._init_argparse(None)
+        app.init_argparse()
 
         # Assert
         mock_parser.add_mutually_exclusive_group.assert_called_once()
@@ -64,7 +63,7 @@ class TestApp(unittest.TestCase):
 
                 # Apply
                 try:
-                    App._validate_input(None, input_str)
+                    app.validate_input(input_str)
 
                 # Assert
                 except ValueError as e:
@@ -107,7 +106,7 @@ class TestApp(unittest.TestCase):
                     msg=f"Failed to raise ValueError for {description}: {input_str}",
                 ):
                     # Apply
-                    App._validate_input(None, input_str)
+                    app.validate_input(input_str)
 
     def test_validate_input_input_types(self):
         """Test input type validation"""
@@ -124,9 +123,10 @@ class TestApp(unittest.TestCase):
                     msg=f"Failed to raise error for invalid type: {type(invalid_input)}",
                 ):
                     # Apply
-                    App._validate_input(None, invalid_input)  # type: ignore
+                    app._validate_input(None, invalid_input)  # type: ignore
 
-    def test_string_to_list(self):
+    @patch("app.validate_input")
+    def test_string_to_list(self, mock_validate_input):
         """Test string to list conversion"""
 
         # Arrange
@@ -138,120 +138,118 @@ class TestApp(unittest.TestCase):
 
         for input_str, expected in test_cases:
             with self.subTest(input=input_str):
-                mock_app = Mock()
-                mock_app._validate_input = Mock()
 
                 # Apply
-                result = App._string_to_list(mock_app, input_str)
+                result = app.string_to_list(input_str)
 
                 # Assert
                 self.assertEqual(result, expected)
-                mock_app._validate_input.assert_called_once()
+                mock_validate_input.assert_called()
 
-    @patch("builtins.open", new_callable=mock_open)
-    def test_read_csv_valid(self, mock_file):
+    @patch("builtins.open", mock_open(read_data="1,2,3\n4,5,6\n7,8,9"))
+    def test_read_csv_valid(self):
         """Test CSV file reading with valid content"""
-
         # Arrange
-        mock_file.return_value.__enter__.return_value = StringIO("1,2,3\n4,5,6\n7,8,9")
-        mock_app = Mock()
-        mock_app._validate_list = Mock()
 
         # Apply
-        result = App._read_csv(mock_app, Path("test.csv"))
+        with patch("app.validate_list") as mock_validate_list:
+            result = app.read_csv(Path("test.csv"))
 
         # Assert
         expected = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         self.assertEqual(result, expected)
-        self.assertEqual(mock_app._validate_list.call_count, len(expected))
+        self.assertEqual(mock_validate_list.call_count, len(expected))
 
-    def test_format_input_units(self):
+    @patch("app.string_to_list")
+    def test_format_input_units(self, mock_string_to_list):
         """Test input formatting with units argument"""
 
         # Arrange
-        mock_app = Mock()
-
         mock_args = Mock()
         mock_args.units = "1,2,3"
         mock_args.file = None
-        mock_app.args = mock_args
 
-        mock_string_to_list = Mock()
         mock_string_to_list.return_value = ["1", "2", "3"]
-        mock_app._string_to_list = mock_string_to_list
 
         # Apply
-        result = App._format_input(mock_app)
+        result = app.format_input(mock_args)
 
         # Assert
         mock_string_to_list.assert_called_once_with("1,2,3")
         self.assertEqual(result, [["1", "2", "3"]])
 
-    def test_format_input_file(self):
+    @patch("app.read_csv")
+    def test_format_input_file(self, mock_read_csv):
         """Test input formatting with file type"""
 
         # Arrange
-        mock_app = Mock()
-
         mock_args = Mock()
         mock_args.units = None
         mock_args.file = "test.csv"
-        mock_app.args = mock_args
 
-        mock_read_csv = Mock()
         mock_read_csv.return_value = [["1", "2", "3"], ["2", "3", "4"]]
-        mock_app._read_csv = mock_read_csv
 
         # Apply
-        result = App._format_input(mock_app)
+        result = app.format_input(mock_args)
 
         # Assert
         mock_read_csv.assert_called_once()
         self.assertEqual(result, [["1", "2", "3"], ["2", "3", "4"]])
 
-    def test_formay_input_invalid_file(self):
+    @patch("app.read_csv")
+    def test_format_input_invalid_file(self, mock_read_csv):
         """Test input formatting with invalid file type"""
 
         # Arrange
-        mock_app = Mock()
-
         mock_args = Mock()
         mock_args.units = None
         mock_args.file = "test.txt"
-        mock_app.args = mock_args
-
-        mock_read_csv = Mock()
-        mock_app.__read_csv = mock_read_csv
 
         # Assert
         with self.assertRaises(ValueError):
 
             # Apply
-            App._format_input(mock_app)
+            app.format_input(mock_args)
 
             # Assert
             mock_read_csv.assert_not_called()
 
-    @patch("frobenius.FrobeniusCalc.solve_for_frobenius_number")
+    @patch("app.solve_for_frobenius_number")
     def test_run_frobenius_calculator(self, mock_solve):
         """Test Frobenius calculator execution"""
 
         # Arrange
-        mock_app = Mock()
         mock_input = [[5, 8, 9, 12]]
-        mock_app.input = mock_input
-
         mock_solve.return_value = 11
 
         with patch("builtins.print") as mock_print:
 
             # Apply
-            App.run_frobenius_calculator(mock_app)
+            app.run_frobenius_calculator(mock_input)
 
             # Assert
             mock_solve.assert_called_once()
             mock_print.assert_called_once_with(
-                f"The Frobenius number of {mock_input[0]} is 11."
+                f"The largest order volume that is NOT perfectly purchasable for units {mock_input[0]} is 11."
+            )
+
+    @patch("app.solve_for_frobenius_number")
+    def test_run_frobenius_calculator_None(self, mock_solve):
+        """Test Frobenius calculator execution if result is None"""
+
+        # Arrange
+        mock_input = [[5], [2, 4]]
+        mock_solve.return_value = None
+
+        with patch("builtins.print") as mock_print:
+
+            # Apply
+            app.run_frobenius_calculator(mock_input)
+
+            # Assert
+            self.assertEqual(mock_print.call_count, 2)
+            mock_print.assert_called_with(
+                f"There is no finite solution for units {mock_input[1]}."
             )
 
 

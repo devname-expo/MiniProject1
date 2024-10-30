@@ -1,49 +1,76 @@
-class FrobeniusCalc:
-
-    def __init__(self):
-        pass
+import math
+from typing import Optional, List
 
 
-class FrobeniusCalc:
+def solve_for_frobenius_number(l: list) -> Optional[List[int]]:
+    """Given a list of positive integer numbers, solves for the Frobenius number.
 
-    def __init__(self):
-        pass
+    Args:
+        l (list): a list of positive integers
 
-    # Solve for 1 number
-    def solve_for_one(self, i: int) -> int:
+    Returns:
+        Optional[List[int]]: The largest number that cannot be expressed as a linear combination of positive integers. None if no solution or list size of 1.
+    """
 
-        # return inf
+    try:
+
+        # NOTE: Adding check for lists with 0s
+        while True:
+            if l[0]:
+                # Initialize head and units
+                head_unit = l[0]
+                units = l[1:]
+                break
+            else:
+                l = l[1:]
+
+    except IndexError:  # l < 2
         return None
 
-    # Solve for 2 coprimes
-    def solve_for_two(self, l: list) -> int:
+    # Initialize residue_table by setting first index of list to 0, and all other indices to infinity
+    res_table = [float("inf")] * head_unit
+    res_table[0] = 0
 
-        # If gcd > 1 return inf
-        # Else
+    # NOTE: Adding check for performance on very large non-coprime numbers
+    if sum(l) > 10000:
+        # check for total gcd.
+        total_gcd = math.gcd(l[0], l[1])
+        for u in units[1:]:
+            total_gcd = math.gcd(u, total_gcd)
+        if total_gcd != 1:
+            return None
 
-        # Return result
-        return None
+    # For each additional unit (2nd through last)
+    for curr_unit in units:
 
-    # Solve for 2+ numbers
-    def solve_for_many(self, l: list) -> int:
+        # Find the gcd between the first unit and this additional unit
+        gcd = math.gcd(head_unit, curr_unit)
 
-        return None
+        # For the range of the gcd
+        for r in range(gcd):
 
-    # Call appropriate solution function for list length
-    def solve_for_frobenius_number(self, l: list) -> str:
-        # If size of 1
-        ## Call solve for 1 function
+            # Step through the table, using the loop number as a step size, and take the minimum value
+            min_val = min([res_table[i] for i in range(head_unit) if i % gcd == r])
 
-        # Else
-        ## Call reorder function
-        ## (?) Handle gcd > 1
+            # If the min is a finite value, then
+            if min_val != float("inf"):
 
-        ### If size of 2
-        #### Call solve for coprimes function
+                # Loop (first_unit / gcd - 1) times
+                for _ in range(int(head_unit / gcd)):
 
-        ### Else 3+
-        #### Call Enforce Limits function
-        #### Call solve for many function
+                    # Add the current unit value to min_value
+                    min_val = min_val + curr_unit
 
-        # Return Solution
+                    # Get remainder when divided by first unit
+                    i = min_val % head_unit
+
+                    # Update res table value to be minimum of min_value and what's saved in residue_table
+                    min_val = min(min_val, res_table[i])
+                    res_table[i] = min_val
+
+    # return max(residue_table) - first_unit
+    max_value = max(res_table)
+    if max_value != float("inf"):
+        return max_value - head_unit
+    else:
         return None
