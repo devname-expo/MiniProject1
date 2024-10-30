@@ -16,23 +16,9 @@
 				"njpwerner.autodocstring",
 				"streetsidesoftware.code-spell-checker",
 				"yzhang.markdown-all-in-one",
-				"tomoki1207.pdf"
-			],
-			"settings": {
-				"cSpell.words": [
-					"coprimes"
-				],
-				"python.linting.enabled": true,
-				"python.linting.pylintEnabled": true,
-				"editor.insertSpaces": true,
-				"editor.formatOnSave": false,
-				"[python]": {
-					"editor.defaultFormatter": "ms-python.black-formatter",
-					"editor.formatOnSave": true
-				},
-				"python.testing.unittestPath": "/usr/local/bin/unittest",
-				"python.testing.unittestEnabled": true
-			}
+				"tomoki1207.pdf",
+				"eamodio.gitlens"
+			]
 		}
 	}
 	// Features to add to the dev container. More info: https://containers.dev/features.

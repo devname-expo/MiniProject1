@@ -11,7 +11,7 @@ class App:
     def __init__(self):
         self.parser = self._init_argparse()
         self.args = self.parser.args
-        self.input = self._set_input()
+        self.input = self._format_input()
 
     def _init_argparse(self) -> argparse.ArgumentParser:
         """Initializes argparse object
@@ -48,7 +48,7 @@ class App:
             ValueError: throws error if string is not only digits and commas
         """
         # Declare regex pattern for list of positive ints
-        pattern = re.compile(r"(\d+,?)+$")
+        pattern = re.compile(r"\d+(,\d+)*$")
         if not pattern.match(s):
             raise ValueError(
                 "Input must be a string of positive integers separated by commas. Ex: '1,2,3'"
@@ -100,7 +100,7 @@ class App:
 
         return list_f
 
-    def _set_input(self) -> list:
+    def _format_input(self) -> list:
         """Sets units to list of positive integers scraped from input.
 
         Returns:
@@ -117,7 +117,7 @@ class App:
         # Handle csv input
         else:
             path = Path(self.args.file)
-            if path.suffix == "csv":
+            if path.suffix == ".csv":
                 input = self._read_csv(path)
             else:
                 raise ValueError("File must be csv format.")

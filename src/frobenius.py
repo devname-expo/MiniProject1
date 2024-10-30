@@ -1,4 +1,7 @@
-import math
+class FrobeniusCalc:
+
+    def __init__(self):
+        pass
 
 
 class FrobeniusCalc:
