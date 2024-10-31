@@ -55,6 +55,10 @@ class TestFrobeniusNumber(unittest.TestCase):
         """Test that zero order doesn't affect result."""
         self.assertEqual(solve_for_frobenius_number([0, 3, 5, 7]), 4)
 
+    def test_middle_zero(self):
+        """Test that zero order doesn't affect result."""
+        self.assertEqual(solve_for_frobenius_number([3, 0, 5, 7]), 4)
+
     def test_all_zeros(self):
         """Test that zero order doesn't affect result."""
         self.assertIsNone(solve_for_frobenius_number([0, 0, 0, 0]))
