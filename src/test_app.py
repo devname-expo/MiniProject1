@@ -227,7 +227,7 @@ class TestApp(unittest.TestCase):
         with patch("builtins.print") as mock_print:
 
             # Apply
-            app.calculate_and_print_results(mock_input)
+            app.calculate_and_print_results(mock_input, True)
 
             # Assert
             mock_solve.assert_called_once()
@@ -246,7 +246,7 @@ class TestApp(unittest.TestCase):
         with patch("builtins.print") as mock_print:
 
             # Apply
-            app.calculate_and_print_results(mock_input)
+            app.calculate_and_print_results(mock_input, True)
 
             # Assert
             self.assertEqual(mock_print.call_count, 2)
