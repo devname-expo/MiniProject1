@@ -37,6 +37,8 @@ Use the `-f` or `--file` flag to process multiple sets of numbers from a CSV fil
 python frobenius_calculator.py -f input.csv
 ```
 
+**Note**: use flag --verbose for more detailed response
+
 The CSV file should contain one set of comma-separated positive integers per line:
 ```csv
 3,5,7

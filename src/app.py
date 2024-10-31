@@ -1,147 +1,146 @@
 import argparse
 import csv
 import re
-
 from pathlib import Path
+from typing import List
 from frobenius import solve_for_frobenius_number
 
+INTEGER_LIST_PATTERN = re.compile(r"\d+(,\d+)*$")
 
-# Validate input is comma separated list of positive integers
-def validate_input(s: str):
-    """Validates string is comma separated list of positive integers
+
+def validate_comma_separated_integers(input_str: str) -> None:
+    """Validates that a string contains only comma-separated positive integers.
 
     Args:
-        s (str): string to validate
+        input_str: String to validate
 
     Raises:
-        ValueError: throws error if string is not only digits and commas
+        ValueError: If string contains invalid characters or format
     """
-    # Declare regex pattern for list of positive ints
-    pattern = re.compile(r"\d+(,\d+)*$")
-    if not pattern.match(s):
+    if not INTEGER_LIST_PATTERN.match(input_str):
         raise ValueError(
-            "Input must be a string of positive integers separated by commas. Ex: '1,2,3'"
+            "Input must be positive integers separated by commas. Example: '1,2,3'"
         )
 
 
-# Transform string of ints to list
-def string_to_list(s: str) -> list:
-    """Transforms string of integers to list
+def parse_integer_string(input_str: str) -> List[int]:
+    """Converts a comma-separated string of integers into a list.
 
     Args:
-        s (str): string to transform into list
+        input_str: String of comma-separated integers
 
     Returns:
-        list: list of integers
+        List of integers parsed from the string
     """
-    validate_input(s)
-    l = s.split(",")
-
-    return [int(n) for n in l]
+    validate_comma_separated_integers(input_str)
+    return [int(num) for num in input_str.split(",")]
 
 
-def validate_list(l: list):
-    """Validates list contains only digits
+def read_csv_to_integer_lists(file_path: Path) -> List[List[int]]:
+    """Reads CSV file and returns lists of integers from each line.
 
     Args:
-        l (list): list to validate
+        file_path: Path to CSV file
+
+    Returns:
+        List of integer lists, one per CSV line
+    """
+    integer_lists = []
+
+    with open(file_path, mode="r") as file:
+        csv_reader = csv.reader(file)
+        for line in csv_reader:
+            validate_comma_separated_integers(",".join(line))
+            integer_lists.append([int(num) for num in line])
+
+    return integer_lists
+
+
+def process_input_args(args: argparse.Namespace) -> List[List[int]]:
+    """Processes command line arguments into lists of integers.
+
+    Args:
+        args: Parsed command line arguments
+
+    Returns:
+        List of integer lists to process
 
     Raises:
-        ValueError: throws error if list is not only positive digits
+        ValueError: If file is not CSV format
     """
-    # Declare regex pattern for list of positive ints
-    pattern = re.compile(r"\d+(,\d+)*$")
-    if not pattern.match(",".join(l)):
-        raise ValueError(
-            "Csv must contain only positive integers. Tip: Make sure your csv doesn't have trailing commas."
-        )
-
-
-# Read file to list of lists
-def read_csv(csv_file: Path) -> list:
-    """Reads csv file to list of lists of integers
-
-    Args:
-        csv_file (Path): Path object to a csv file
-
-    Returns:
-        list: a list of positive integers
-    """
-    with open(csv_file, mode="r") as file:
-        csvFile = csv.reader(file)
-        list_f = []
-        for line in csvFile:
-            validate_list(line)
-            list_f.append([int(_) for _ in line])
-
-    return list_f
-
-
-def format_input(args: object):
-    """Sets units to list of positive integers scraped from input.
-
-    Returns:
-        list: a list of lists of positive integers
-
-    Raises:
-        ValueError: raises error if file is given without .csv suffix
-    """
-    input = []
     if args.units:
-        units_l = string_to_list(args.units)
-        input.append(units_l)
+        return [parse_integer_string(args.units)]
 
-    # Handle csv input
-    else:
-        path = Path(args.file)
-        if path.suffix == ".csv":
-            input = read_csv(path)
-        else:
-            raise ValueError("File must be csv format.")
+    path = Path(args.file)
+    if path.suffix.lower() != ".csv":
+        raise ValueError("Input file must be in CSV format")
 
-    return input
+    return read_csv_to_integer_lists(path)
 
 
-def init_argparse() -> argparse.ArgumentParser:
-    """Initializes argparse object
+def create_argument_parser() -> argparse.ArgumentParser:
+    """Creates and configures the argument parser.
 
     Returns:
-        argparse.ArgumentParser: a parser
+        Configured argument parser
     """
     parser = argparse.ArgumentParser(
-        description="Determine the largest integer that cannot be reached using non-negative combinations of given integers.",
+        description=(
+            "Calculate the largest integer that cannot be reached using "
+            "non-negative combinations of given integers."
+        )
     )
+
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        "-u",
-        "--units",
-        help="string of comma separated integers for combination",
-        type=str,
+        "-u", "--units", help="Comma-separated integers (e.g., '1,2,3')", type=str
     )
     group.add_argument(
         "-f",
         "--file",
-        help="file containing comma separated integers for combination (Multiline will run multiple iterations with each line as input.)",
+        help="CSV file with integers (one combination per line for multiple calculations)",
         type=str,
+    )
+    # Add verbose flag
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",  # This makes it a flag that's False by default
+        help="Increase output verbosity",
     )
     return parser
 
 
-def run_frobenius_calculator(input: list):
-    """Runs Frobenius Calculator on each given input"""
+def calculate_and_print_results(integer_lists: List[List[int]], verbose: bool) -> None:
+    """Calculates and prints Frobenius numbers for each integer list.
 
-    for units in input:
-        result = solve_for_frobenius_number(units)
-        if result:
-            print(
-                f"The largest order volume that is NOT perfectly purchasable for units {units} is {result}."
-            )
+    Args:
+        integer_lists: List of integer lists to process
+    """
+    for numbers in integer_lists:
+        result = solve_for_frobenius_number(numbers)
+
+        if verbose:
+            if result is not None:
+                print(
+                    f"The largest order volume that is NOT perfectly purchasable "
+                    f"for units {numbers} is {result}."
+                )
+
+            else:
+                print(f"There is no finite solution for units {numbers}.")
         else:
-            print(f"There is no finite solution for units {units}.")
+            print(f"{numbers} -> {result}")
+
+
+def main():
+    """Main entry point for the Frobenius calculator."""
+    parser = create_argument_parser()
+    args = parser.parse_args()
+
+    integer_lists = process_input_args(args)
+    calculate_and_print_results(integer_lists, args.verbose)
 
 
 if __name__ == "__main__":
-
-    parser = init_argparse()
-    input = format_input(parser.parse_args())
-    run_frobenius_calculator(input)
+    main()

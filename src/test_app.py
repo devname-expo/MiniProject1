@@ -9,7 +9,7 @@ class TestApp(unittest.TestCase):
     """Test suite for app file"""
 
     @patch("argparse.ArgumentParser")
-    def test_init_argparse(self, mock_ArgumentParser):
+    def test_create_argument_parser(self, mock_ArgumentParser):
         """Test argument parser initialization"""
 
         # Arrange
@@ -19,24 +19,24 @@ class TestApp(unittest.TestCase):
         mock_ArgumentParser.return_value = mock_parser
 
         # Apply
-        app.init_argparse()
+        app.create_argument_parser()
 
         # Assert
         mock_parser.add_mutually_exclusive_group.assert_called_once()
         mock_group.add_argument.assert_any_call(
             "-u",
             "--units",
-            help="string of comma separated integers for combination",
+            help="Comma-separated integers (e.g., '1,2,3')",
             type=str,
         )
         mock_group.add_argument.assert_any_call(
             "-f",
             "--file",
-            help="file containing comma separated integers for combination (Multiline will run multiple iterations with each line as input.)",
+            help="CSV file with integers (one combination per line for multiple calculations)",
             type=str,
         )
 
-    def test_validate_input_valid_cases(self):
+    def test_validate_comma_separated_integers_valid_cases(self):
         """Test input validation with valid inputs"""
 
         # Arrange
@@ -61,7 +61,7 @@ class TestApp(unittest.TestCase):
 
                 # Apply
                 try:
-                    app.validate_input(input_str)
+                    app.validate_comma_separated_integers(input_str)
 
                 # Assert
                 except ValueError as e:
@@ -69,7 +69,7 @@ class TestApp(unittest.TestCase):
                         f"Validation failed for edge case '{description}': {str(e)}"
                     )
 
-    def test_validate_input_invalid_cases(self):
+    def test_validate_comma_separated_integers_invalid_cases(self):
         """Test various invalid input formats"""
 
         # Arrange
@@ -104,9 +104,9 @@ class TestApp(unittest.TestCase):
                     msg=f"Failed to raise ValueError for {description}: {input_str}",
                 ):
                     # Apply
-                    app.validate_input(input_str)
+                    app.validate_comma_separated_integers(input_str)
 
-    def test_validate_input_input_types(self):
+    def test_validate_comma_separated_integers_input_types(self):
         """Test input type validation"""
 
         # Arrange
@@ -121,10 +121,10 @@ class TestApp(unittest.TestCase):
                     msg=f"Failed to raise error for invalid type: {type(invalid_input)}",
                 ):
                     # Apply
-                    app._validate_input(None, invalid_input)  # type: ignore
+                    app.validate_comma_separated_integers(None, invalid_input)  # type: ignore
 
-    @patch("app.validate_input")
-    def test_string_to_list(self, mock_validate_input):
+    @patch("app.validate_comma_separated_integers")
+    def test_parse_integer_string(self, mock_validate_input):
         """Test string to list conversion"""
 
         # Arrange
@@ -138,28 +138,32 @@ class TestApp(unittest.TestCase):
             with self.subTest(input=input_str):
 
                 # Apply
-                result = app.string_to_list(input_str)
+                result = app.parse_integer_string(input_str)
 
                 # Assert
                 self.assertEqual(result, expected)
                 mock_validate_input.assert_called()
 
     @patch("builtins.open", mock_open(read_data="1,2,3\n4,5,6\n7,8,9"))
-    def test_read_csv_valid(self):
+    def test_read_csv_to_integer_lists_valid(self):
         """Test CSV file reading with valid content"""
         # Arrange
 
         # Apply
-        with patch("app.validate_list") as mock_validate_list:
-            result = app.read_csv(Path("test.csv"))
+        with patch(
+            "app.validate_comma_separated_integers"
+        ) as mock_validate_comma_separated_integers:
+            result = app.read_csv_to_integer_lists(Path("test.csv"))
 
         # Assert
         expected = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         self.assertEqual(result, expected)
-        self.assertEqual(mock_validate_list.call_count, len(expected))
+        self.assertEqual(
+            mock_validate_comma_separated_integers.call_count, len(expected)
+        )
 
-    @patch("app.string_to_list")
-    def test_format_input_units(self, mock_string_to_list):
+    @patch("app.parse_integer_string")
+    def test_process_input_args_units(self, mock_string_to_list):
         """Test input formatting with units argument"""
 
         # Arrange
@@ -170,14 +174,14 @@ class TestApp(unittest.TestCase):
         mock_string_to_list.return_value = ["1", "2", "3"]
 
         # Apply
-        result = app.format_input(mock_args)
+        result = app.process_input_args(mock_args)
 
         # Assert
         mock_string_to_list.assert_called_once_with("1,2,3")
         self.assertEqual(result, [["1", "2", "3"]])
 
-    @patch("app.read_csv")
-    def test_format_input_file(self, mock_read_csv):
+    @patch("app.read_csv_to_integer_lists")
+    def test_process_input_args_file(self, mock_read_csv):
         """Test input formatting with file type"""
 
         # Arrange
@@ -188,14 +192,14 @@ class TestApp(unittest.TestCase):
         mock_read_csv.return_value = [["1", "2", "3"], ["2", "3", "4"]]
 
         # Apply
-        result = app.format_input(mock_args)
+        result = app.process_input_args(mock_args)
 
         # Assert
         mock_read_csv.assert_called_once()
         self.assertEqual(result, [["1", "2", "3"], ["2", "3", "4"]])
 
-    @patch("app.read_csv")
-    def test_format_input_invalid_file(self, mock_read_csv):
+    @patch("app.read_csv_to_integer_lists")
+    def test_process_input_args_invalid_file(self, mock_read_csv):
         """Test input formatting with invalid file type"""
 
         # Arrange
@@ -207,13 +211,13 @@ class TestApp(unittest.TestCase):
         with self.assertRaises(ValueError):
 
             # Apply
-            app.format_input(mock_args)
+            app.process_input_args(mock_args)
 
             # Assert
             mock_read_csv.assert_not_called()
 
     @patch("app.solve_for_frobenius_number")
-    def test_run_frobenius_calculator(self, mock_solve):
+    def test_calculate_and_print_results(self, mock_solve):
         """Test Frobenius calculator execution"""
 
         # Arrange
@@ -223,7 +227,7 @@ class TestApp(unittest.TestCase):
         with patch("builtins.print") as mock_print:
 
             # Apply
-            app.run_frobenius_calculator(mock_input)
+            app.calculate_and_print_results(mock_input)
 
             # Assert
             mock_solve.assert_called_once()
@@ -232,7 +236,7 @@ class TestApp(unittest.TestCase):
             )
 
     @patch("app.solve_for_frobenius_number")
-    def test_run_frobenius_calculator_None(self, mock_solve):
+    def test_calculate_and_print_results_None(self, mock_solve):
         """Test Frobenius calculator execution if result is None"""
 
         # Arrange
@@ -242,7 +246,7 @@ class TestApp(unittest.TestCase):
         with patch("builtins.print") as mock_print:
 
             # Apply
-            app.run_frobenius_calculator(mock_input)
+            app.calculate_and_print_results(mock_input)
 
             # Assert
             self.assertEqual(mock_print.call_count, 2)
