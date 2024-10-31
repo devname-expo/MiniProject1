@@ -26,7 +26,7 @@ The calculator can be used in two ways:
 Use the `-u` or `--units` flag followed by a comma-separated list of positive integers:
 
 ```bash
-python frobenius_calculator.py -u "3,5,7"
+python src/app.py -u "3,5,7"
 ```
 
 ### 2. CSV File Input
@@ -34,7 +34,7 @@ python frobenius_calculator.py -u "3,5,7"
 Use the `-f` or `--file` flag to process multiple sets of numbers from a CSV file:
 
 ```bash
-python frobenius_calculator.py -f input.csv
+python fsrc/app.py.py -f input.csv
 ```
 
 **Note**: use flag --verbose for more detailed response
@@ -50,7 +50,35 @@ The CSV file should contain one set of comma-separated positive integers per lin
 
 ### Command Line Input
 ```bash
-$ python frobenius_calculator.py -u "3,5,7"
+$ python frobenius_calculator.py -u "1000001,
+
+1000003,
+
+1000007,
+
+1000009,
+
+1000013,
+
+1000027,
+
+1000031,
+
+1000037,
+
+1000039,
+
+1000049,
+
+1000051,
+
+1000057,
+
+1000063,
+
+1000067,
+
+1000073,"
 Input [3, 5, 7]: Frobenius number = 4
 ```
 
